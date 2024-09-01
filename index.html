@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFL Team Picker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        .division {
+            margin-bottom: 20px;
+        }
+        select {
+            width: 100%;
+            padding: 5px;
+            margin-top: 5px;
+        }
+        #picks {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>NFL Team Picker</h1>
+    <div id="divisions"></div>
+    <div id="picks"></div>
+
+    <script>
+        const nflDivisions = {
+            "AFC East": ["Bills", "Dolphins", "Patriots", "Jets"],
+            "AFC North": ["Ravens", "Bengals", "Browns", "Steelers"],
+            "AFC South": ["Texans", "Colts", "Jaguars", "Titans"],
+            "AFC West": ["Broncos", "Chiefs", "Raiders", "Chargers"],
+            "NFC East": ["Cowboys", "Giants", "Eagles", "Commanders"],
+            "NFC North": ["Bears", "Lions", "Packers", "Vikings"],
+            "NFC South": ["Falcons", "Panthers", "Saints", "Buccaneers"],
+            "NFC West": ["Cardinals", "Rams", "49ers", "Seahawks"]
+        };
+
+        const divisionsContainer = document.getElementById('divisions');
+        const picksContainer = document.getElementById('picks');
+
+        function createSelect(division, teams) {
+            const div = document.createElement('div');
+            div.className = 'division';
+            div.innerHTML = `
+                <label for="${division}">${division}:</label>
+                <select id="${division}" onchange="updatePicks()">
+                    <option value="">Select a team</option>
+                    ${teams.map(team => `<option value="${team}">${team}</option>`).join('')}
+                </select>
+            `;
+            return div;
+        }
+
+        function initApp() {
+            for (const [division, teams] of Object.entries(nflDivisions)) {
+                divisionsContainer.appendChild(createSelect(division, teams));
+            }
+
+            // Add Sunday Night Game
+            const allTeams = Object.values(nflDivisions).flat();
+            divisionsContainer.appendChild(createSelect("Sunday Night Game", allTeams));
+        }
+
+        function updatePicks() {
+            const picks = {};
+            document.querySelectorAll('select').forEach(select => {
+                if (select.value) {
+                    picks[select.id] = select.value;
+                }
+            });
+
+            picksContainer.innerHTML = `
+                <h2>Your Picks:</h2>
+                ${Object.entries(picks).map(([division, team]) => `
+                    <p>${division}: ${team}</p>
+                `).join('')}
+            `;
+        }
+
+        initApp();
+    </script>
+</body>
+</html>
