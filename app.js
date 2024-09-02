@@ -26,6 +26,20 @@ function getWeekStartDates(startDate) {
     return weeks;
 }
 
+function getCurrentNFLWeek() {
+    const today = new Date();
+    const weekStartDates = getWeekStartDates(seasonStartDate);
+    
+    for (let i = 0; i < weekStartDates.length; i++) {
+        if (today >= weekStartDates[i] && (i === weekStartDates.length - 1 || today < weekStartDates[i + 1])) {
+            return i + 1;
+        }
+    }
+    
+    // If we're before the season start or after the last week, return 1
+    return 1;
+}
+
 // Group events by their corresponding week
 function groupEventsByWeek(events, weekStartDates) {
     const groupedEvents = {};
@@ -75,13 +89,18 @@ function displaySchedule(data) {
 let globalData = null; // Store the fetched data globally
 
 async function fetchSchedule() {
-    const url = 'https://us-central1-footballdata-2024.cloudfunctions.net/getNflSchedule'; // Replace with your actual Firebase Function URL
+    const url = 'https://us-central1-footballdata-2024.cloudfunctions.net/getNflSchedule';
 
     try {
         const response = await fetch(url);
         globalData = await response.json();
-        displaySchedule(globalData); // Display all weeks initially
-        rebuildDivisionSelectors(globalData.events); // Rebuild selectors with all weeks
+        
+        // Set the default week
+        const defaultWeek = getCurrentNFLWeek();
+        document.getElementById('week').value = defaultWeek;
+        
+        // Filter and display the schedule for the default week
+        filterByWeek();
     } catch (error) {
         console.error('Error fetching the schedule:', error);
         scheduleContainer.innerHTML = '<p>Error loading schedule.</p>';
@@ -132,10 +151,44 @@ function updatePicks() {
     let displayPicks = `<h2>Your Picks:</h2>`;
     Object.entries(selectedTeams).forEach(([division, teamAndOpponent]) => {
         const [teamName, opponent] = teamAndOpponent.includes(' vs ') ? teamAndOpponent.split(' vs ') : [teamAndOpponent, 'No opponent'];
-        displayPicks += `<p>${division}: ${teamName} vs ${opponent}</p>`;
+        displayPicks += `
+            <p>
+                ${division}: <strong>${teamName}</strong> 
+                ${opponent !== 'No opponent' ? `vs <span style="color: #888;">${opponent}</span>` : ''}
+            </p>
+        `;
     });
 
     picksContainer.innerHTML = displayPicks;
+
+    // Disable conflicting picks
+    disableConflictingPicks(selectedTeams);
+}
+
+function disableConflictingPicks(selectedTeams) {
+    const allSelects = document.querySelectorAll('select');
+    const selectedOpponents = new Set();
+
+    // Collect all selected opponents
+    Object.values(selectedTeams).forEach(value => {
+        if (value.includes(' vs ')) {
+            selectedOpponents.add(value.split(' vs ')[1]);
+        }
+    });
+
+    // Disable options that conflict with selected opponents
+    allSelects.forEach(select => {
+        Array.from(select.options).forEach(option => {
+            if (option.value.includes(' vs ')) {
+                const [team, opponent] = option.value.split(' vs ');
+                if (selectedOpponents.has(team)) {
+                    option.disabled = true;
+                } else {
+                    option.disabled = false;
+                }
+            }
+        });
+    });
 }
 
 function rebuildDivisionSelectors(games) {
