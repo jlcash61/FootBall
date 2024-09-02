@@ -22,7 +22,7 @@
             padding: 5px;
             margin-top: 5px;
         }
-        #picks {
+        #picks, #schedule {
             margin-top: 20px;
             font-weight: bold;
         }
@@ -32,6 +32,7 @@
     <h1>NFL Team Picker</h1>
     <div id="divisions"></div>
     <div id="picks"></div>
+    <div id="schedule"></div>
 
     <script>
         const nflDivisions = {
@@ -47,6 +48,7 @@
 
         const divisionsContainer = document.getElementById('divisions');
         const picksContainer = document.getElementById('picks');
+        const scheduleContainer = document.getElementById('schedule');
 
         function createSelect(division, teams) {
             const div = document.createElement('div');
@@ -69,6 +71,39 @@
             // Add Sunday Night Game
             const allTeams = Object.values(nflDivisions).flat();
             divisionsContainer.appendChild(createSelect("Sunday Night Game", allTeams));
+
+            // Fetch and display the schedule
+            fetchSchedule();
+        }
+
+        async function fetchSchedule() {
+            const url = 'http://nfl-api-data.p.rapidapi.com/nfl-events?year=2023';
+            const options = {
+                method: 'GET',
+                headers: {
+                    'x-rapidapi-host': 'nfl-api-data.p.rapidapi.com',
+                    'x-rapidapi-key': '1150be4b2bmsh374989d75d0191ep1237a1jsn41abcb4d7a8' // Replace with your actual API key
+                }
+            };
+
+            try {
+                const response = await fetch(url, options);
+                const data = await response.json();
+                displaySchedule(data);
+            } catch (error) {
+                console.error('Error fetching the schedule:', error);
+                scheduleContainer.innerHTML = '<p>Error loading schedule.</p>';
+            }
+        }
+
+        function displaySchedule(data) {
+            // Assuming `data` is an array of game objects with properties like date, home_team, and away_team
+            scheduleContainer.innerHTML = `
+                <h2>NFL Schedule:</h2>
+                ${data.map(game => `
+                    <p>${game.date}: ${game.away_team} @ ${game.home_team}</p>
+                `).join('')}
+            `;
         }
 
         function updatePicks() {
